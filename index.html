@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Ingreso Numérico</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #0f172a);
+      --hint: var(--tg-theme-hint-color, #64748b);
+      --sec-bg: var(--tg-theme-secondary-bg-color, #f1f5f9);
+      --btn: var(--tg-theme-button-color, #2563eb);
+      --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); }
+    h2 { margin: 0 0 6px; font-size: 20px; }
+    p { margin: 0 0 18px; color:(--hint); color: var(--hint); font-size: 14px; }
+    input {
+      width: 100%; padding: 14px 16px; font-size: 24px; font-weight: 600;
+      letter-spacing: 1px; border: 2px solid #cbd5e1; border-radius: 12px;
+      background: var(--sec-bg); color: var(--text); outline: none;
+    }
+    input:focus { border-color: var(--btn); }
+    .err { color: #dc2626; font-size: 13px; margin-top: 8px; min-height: 18px; }
+    button {
+      margin-top: 16px; width: 100%; padding: 14px; border: 0; border-radius: 12px;
+      background: var(--btn); color: var(--btn-text); font-size: 16px; font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2 id="title">Ingresar número</h2>
+  <p id="sub"></p>
+  <input id="val" type="text" autocomplete="off" autofocus />
+  <div id="err" class="err"></div>
+  <button id="sendBtn" type="button">Confirmar</button>
+
+  <script>
+    const MODES = {
+      dni:     { title: "Ingresar DNI",       sub: "Solo números, sin puntos ni espacios.",            ph: "Ej: 29816215",   im: "numeric", pat: "[0-9]*",    min: 6,  max: 9,  dec: false },
+      tel:     { title: "Teléfono Móvil",     sub: "Código de área sin 0 + número sin 15 (10 díg.).", ph: "Ej: 3875123456", im: "numeric", pat: "[0-9]*",    min: 10, max: 11, dec: false },
+      legajo:  { title: "Número de Legajo",   sub: "Ingresa el número de legajo.",                    ph: "Ej: 163",        im: "numeric", pat: "[0-9]*",    min: 1,  max: 6,  dec: false },
+      importe: { title: "Ingresar Importe",   sub: "Escribe el monto sin signo $.",                   ph: "Ej: 85000",      im: "decimal", pat: "[0-9.,]*",  min: 1,  max: 12, dec: true  }
+    };
+
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const mode = (new URLSearchParams(window.location.search).get("mode") || "dni").toLowerCase();
+    const cfg = MODES[mode] || MODES.dni;
+
+    document.title = cfg.title;
+    document.getElementById("title").textContent = cfg.title;
+    document.getElementById("sub").textContent = cfg.sub;
+
+    const inp = document.getElementById("val");
+    const err = document.getElementById("err");
+    inp.placeholder = cfg.ph;
+    inp.setAttribute("inputmode", cfg.im);
+    inp.setAttribute("pattern", cfg.pat);
+
+    inp.addEventListener("input", () => {
+      let v = inp.value;
+      v = cfg.dec ? v.replace(/[^0-9.,]/g, "") : v.replace(/\D/g, "");
+      if (v.length > cfg.max) v = v.slice(0, cfg.max);
+      inp.value = v;
+      err.textContent = "";
+    });
+
+    function submitVal() {
+      let v = inp.value.trim();
+      if (cfg.dec) v = v.replace(",", ".");
+      if (v.length < cfg.min) {
+        err.textContent = "Faltan dígitos o el valor es demasiado corto.";
+        inp.focus();
+        return;
+      }
+      tg.sendData(v);
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", submitVal);
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") submitVal(); });
+    setTimeout(() => inp.focus(), 150);
+  </script>
+</body>
+</html>
