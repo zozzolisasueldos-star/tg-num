@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Declaración de Grupo Familiar</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #f8fafc);
+      --text: var(--tg-theme-text-color, #0f172a);
+      --hint: var(--tg-theme-hint-color, #64748b);
+      --card-bg: var(--tg-theme-secondary-bg-color, #ffffff);
+      --btn: var(--tg-theme-button-color, #2563eb);
+      --btn-text: var(--tg-theme-button-text-color, #ffffff);
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); padding: 16px; padding-bottom: 90px; }
+    
+    .header { margin-bottom: 16px; }
+    .header h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .header p { font-size: 13px; color: var(--hint); }
+    
+    .titular-badge {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .titular-badge .tit-label { font-size: 11px; text-transform: uppercase; color: var(--hint); font-weight: 600; }
+    .titular-badge .tit-val { font-size: 15px; font-weight: 600; }
+
+    .sec-title {
+      font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--hint); margin: 16px 0 10px; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .fam-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px; margin-bottom: 12px; transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03); position: relative;
+    }
+    .fam-card.baja { opacity: 0.55; border-color: var(--danger); background: #fef2f2; }
+    .fam-card.nuevo { border-left: 4px solid var(--success); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .par-tag {
+      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px;
+      background: #eff6ff; color: #1d4ed8; display: inline-block;
+    }
+    .baja .par-tag { background: #fee2e2; color: #b91c1c; }
+
+    .card-body h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .card-data { font-size: 13px; color: var(--hint); line-height: 1.4; }
+
+    .card-actions {
+      display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);
+    }
+    .btn-action {
+      flex: 1; padding: 7px 10px; font-size: 12px; font-weight: 600; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; text-align: center;
+    }
+    .btn-action.active { background: #dcfce7; color: #15803d; border-color: #86efac; }
+    .btn-action.baja-btn { color: var(--danger); }
+    .btn-action.baja-btn.active { background: #fee2e2; border-color: #fca5a5; }
+
+    .edit-form { display: none; margin-top: 12px; flex-direction: column; gap: 10px; }
+    .edit-form.open { display: flex; }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--hint); }
+    .form-control {
+      width: 100%; padding: 10px 12px; font-size: 14px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none;
+    }
+    .form-control:focus { border-color: var(--btn); }
+
+    .btn-add {
+      width: 100%; padding: 12px; background: transparent; border: 2px dashed #94a3b8;
+      border-radius: 12px; color: var(--btn); font-weight: 600; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px;
+    }
+
+    .bottom-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg);
+      border-top: 1px solid var(--border); padding: 12px 16px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+      display: flex; gap: 10px; z-index: 100;
+    }
+    .btn-submit {
+      width: 100%; padding: 14px; border: 0; border-radius: 12px;
+      background: var(--btn); color: var(--btn-text); font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+
+    .empty-state {
+      text-align: center; padding: 24px 16px; background: var(--card-bg); border-radius: 12px;
+      border: 1px solid var(--border); color: var(--hint); font-size: 14px; margin-bottom: 12px;
+    }
+    .err-msg { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>👨‍👩‍👧‍👦 Cargas de Familia</h1>
+    <p>Verifica y actualiza tu grupo familiar para Obra Social y Asignaciones.</p>
+  </div>
+
+  <div class="titular-badge">
+    <div class="tit-label">Empleado Titular</div>
+    <div id="titularNom" class="tit-val">Cargando datos...</div>
+    <div id="titularSub" style="font-size: 12px; color: var(--hint);">Legajo -- | CUIL --</div>
+  </div>
+
+  <div class="sec-title">
+    <span>Familiares Declarados</span>
+    <span id="cantBadge" style="font-size: 12px; font-weight: 400;">0 registros</span>
+  </div>
+
+  <div id="familiaresList"></div>
+
+  <button type="button" class="btn-add" id="btnAddFam">
+    ➕ Agregar Nuevo Familiar
+  </button>
+
+  <div class="form-group" style="margin-top: 20px;">
+    <label for="obsGeneral">Observaciones / Aclaraciones (Opcional)</label>
+    <textarea id="obsGeneral" class="form-control" rows="2" placeholder="Ej: Se adjuntará partida de nacimiento por RRHH..."></textarea>
+  </div>
+
+  <div class="bottom-bar">
+    <button type="button" class="btn-submit" id="btnSubmit">
+      ✅ Confirmar y Enviar Declaración
+    </button>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    // Estructura de estado
+    let state = {
+      legajo: 0,
+      titular: "Empleado",
+      cuil: "",
+      familiares: [] // { id, parentesco, apellido, nombre, dni, cuil, fecha_nac, sexo, estado_civil, accion: 'VIGENTE'|'BAJA'|'EDITADO'|'NUEVO' }
+    };
+
+    // Parseo seguro de Base64URL
+    function parsePayloadFromUrl() {
+      try {
+        let hash = window.location.hash || "";
+        let search = window.location.search || "";
+        let raw = "";
+
+        if (hash.includes("d=")) {
+          raw = hash.split("d=")[1].split("&")[0];
+        } else if (search.includes("d=")) {
+          raw = new URLSearchParams(search).get("d");
+        }
+
+        if (raw) {
+          let b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+          while (b64.length % 4) b64 += "=";
+          let jsonStr = decodeURIComponent(escape(atob(b64)));
+          let parsed = JSON.parse(jsonStr);
+          state.legajo = parsed.legajo || 0;
+          state.titular = parsed.titular || "Empleado";
+          state.cuil = parsed.cuil || "";
+          state.familiares = (parsed.familiares || []).map(f => ({
+            ...f,
+            accion: 'VIGENTE'
+          }));
+          return true;
+        }
+      } catch (e) {
+        console.error("Error decodificando payload:", e);
+      }
+      return false;
+    }
+
+    // Datos demo si se prueba en navegador sin parámetros
+    if (!parsePayloadFromUrl()) {
+      state = {
+        legajo: 163,
+        titular: "GAONA, CARLOS ALBERTO",
+        cuil: "20-28123456-3",
+        familiares: [
+          { id: 1, parentesco: "Cónyuge", apellido: "LOPEZ", nombre: "MARIA SOLEDAD", dni: 30123456, cuil: "27-30123456-4", fecha_nac: "1985-06-12", sexo: "Femenino", accion: "VIGENTE" },
+          { id: 2, parentesco: "Hijo", apellido: "GAONA", nombre: "LUCAS TOMAS", dni: 52123456, cuil: "20-52123456-7", fecha_nac: "2012-09-20", sexo: "Masculino", accion: "VIGENTE" }
+        ]
+      };
+    }
+
+    // Render Inicial
+    document.getElementById("titularNom").textContent = state.titular;
+    document.getElementById("titularSub").textContent = `Legajo ${state.legajo} | CUIL ${state.cuil || "S/D"}`;
+
+    function calcularEdad(fechaStr) {
+      if (!fechaStr) return null;
+      let nac = new Date(fechaStr);
+      if (isNaN(nac.getTime())) return null;
+      let hoy = new Date();
+      let edad = hoy.getFullYear() - nac.getFullYear();
+      let m = hoy.getMonth() - nac.getMonth();
+      if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+      return edad;
+    }
+
+    function renderList() {
+      const container = document.getElementById("familiaresList");
+      container.innerHTML = "";
+
+      let count = state.familiares.filter(f => f.accion !== 'BAJA').length;
+      document.getElementById("cantBadge").textContent = `${count} vigentes`;
+
+      if (state.familiares.length === 0) {
+        container.innerHTML = `<div class="empty-state">No tienes familiares declarados actualmente. Toca el botón abajo para agregar uno.</div>`;
+        return;
+      }
+
+      state.familiares.forEach((f, idx) => {
+        const card = document.createElement("div");
+        card.className = `fam-card ${f.accion === 'BAJA' ? 'baja' : ''} ${f.accion === 'NUEVO' ? 'nuevo' : ''}`;
+
+        let edad = calcularEdad(f.fecha_nac);
+        let edadTxt = edad !== null ? `(${edad} años)` : '';
+        let dniTxt = f.dni ? parseInt(f.dni).toLocaleString('es-AR') : (f.cuil || 'S/D');
+
+        let isBaja = f.accion === 'BAJA';
+        let isEdit = f.accion === 'EDITADO';
+
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="par-tag">${f.parentesco}</span>
+            <span style="font-size: 11px; font-weight: 600; color: ${isBaja ? 'var(--danger)' : (f.accion === 'NUEVO' ? 'var(--success)' : 'var(--hint)')};">
+              ${isBaja ? '✖ BAJA INFORMADA' : (f.accion === 'NUEVO' ? '✚ NUEVO' : (isEdit ? '✎ MODIFICADO' : '✓ VIGENTE'))}
+            </span>
+          </div>
+          <div class="card-body">
+            <h3>${f.apellido} ${f.nombre}</h3>
+            <div class="card-data">
+              <div>DNI: <strong>${dniTxt}</strong> ${f.cuil && f.cuil !== f.dni ? '• CUIL: ' + f.cuil : ''}</div>
+              <div>Nacimiento: <strong>${f.fecha_nac ? f.fecha_nac.split('-').reverse().join('/') : 'S/D'}</strong> ${edadTxt}</div>
+            </div>
+          </div>
+          
+          <div class="card-actions">
+            ${f.accion === 'NUEVO' ? `
+              <button type="button" class="btn-action baja-btn" onclick="eliminarNuevo(${idx})">🗑️ Eliminar</button>
+            ` : `
+              <button type="button" class="btn-action ${!isBaja && !isEdit ? 'active' : ''}" onclick="setAccion(${idx}, 'VIGENTE')">✓ Correcto</button>
+              <button type="button" class="btn-action ${isEdit ? 'active' : ''}" onclick="toggleEdit(${idx})">✏️ Modificar</button>
+              <button type="button" class="btn-action baja-btn ${isBaja ? 'active' : ''}" onclick="toggleBaja(${idx})">${isBaja ? '↩️ Restaurar' : '🗑️ Informar Baja'}</button>
+            `}
+          </div>
+
+          <div id="editForm_${idx}" class="edit-form ${isEdit || f.accion === 'NUEVO' ? 'open' : ''}">
+            <div class="form-group">
+              <label>Parentesco</label>
+              <select class="form-control" onchange="updateField(${idx}, 'parentesco', this.value)">
+                <option value="Hijo" ${f.parentesco === 'Hijo' ? 'selected' : ''}>Hijo / Hija</option>
+                <option value="Cónyuge" ${f.parentesco === 'Cónyuge' ? 'selected' : ''}>Cónyuge</option>
+                <option value="Conviviente" ${f.parentesco === 'Conviviente' ? 'selected' : ''}>Conviviente</option>
+                <option value="Menor a Cargo" ${f.parentesco === 'Menor a Cargo' ? 'selected' : ''}>Menor a Cargo / Tutela</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <div class="form-group" style="flex: 1;">
+                <label>Apellido</label>
+                <input type="text" class="form-control" value="${f.apellido || ''}" oninput="updateField(${idx}, 'apellido', this.value.toUpperCase())" />
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Nombres</label>
+                <input type="text" class="form-control" value="${f.nombre || ''}" oninput="updateField(${idx}, 'nombre', this.value.toUpperCase())" />
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <div class="form-group" style="flex: 1;">
+                <label>DNI</label>
+                <input type="number" class="form-control" value="${f.dni || ''}" oninput="updateField(${idx}, 'dni', this.value)" />
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label>Fecha Nacimiento</label>
+                <input type="date" class="form-control" value="${f.fecha_nac || ''}" onchange="updateField(${idx}, 'fecha_nac', this.value)" />
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    window.setAccion = function(idx, acc) {
+      state.familiares[idx].accion = acc;
+      renderList();
+    };
+
+    window.toggleBaja = function(idx) {
+      state.familiares[idx].accion = state.familiares[idx].accion === 'BAJA' ? 'VIGENTE' : 'BAJA';
+      renderList();
+    };
+
+    window.toggleEdit = function(idx) {
+      let form = document.getElementById(`editForm_${idx}`);
+      if (form) {
+        let isOpen = form.classList.contains("open");
+        if (isOpen && state.familiares[idx].accion === 'EDITADO') {
+          form.classList.remove("open");
+        } else {
+          state.familiares[idx].accion = 'EDITADO';
+          form.classList.add("open");
+        }
+      }
+    };
+
+    window.updateField = function(idx, field, val) {
+      state.familiares[idx][field] = val;
+      if (state.familiares[idx].accion !== 'NUEVO') {
+        state.familiares[idx].accion = 'EDITADO';
+      }
+    };
+
+    window.eliminarNuevo = function(idx) {
+      state.familiares.splice(idx, 1);
+      renderList();
+    };
+
+    document.getElementById("btnAddFam").addEventListener("click", () => {
+      state.familiares.push({
+        id: null,
+        parentesco: "Hijo",
+        apellido: "",
+        nombre: "",
+        dni: "",
+        cuil: "",
+        fecha_nac: "",
+        sexo: "Masculino",
+        accion: "NUEVO"
+      });
+      renderList();
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 100);
+    });
+
+    document.getElementById("btnSubmit").addEventListener("click", () => {
+      // Validaciones
+      for (let i = 0; i < state.familiares.length; i++) {
+        let f = state.familiares[i];
+        if (f.accion !== 'BAJA') {
+          if (!f.apellido || !f.apellido.trim()) {
+            alert(`Por favor completa el Apellido del familiar #${i + 1}`);
+            return;
+          }
+          if (!f.nombre || !f.nombre.trim()) {
+            alert(`Por favor completa el Nombre del familiar #${i + 1}`);
+            return;
+          }
+          if (!f.dni || String(f.dni).length < 6) {
+            alert(`El DNI de ${f.apellido} ${f.nombre} debe tener al menos 6 dígitos.`);
+            return;
+          }
+          if (!f.fecha_nac) {
+            alert(`Por favor ingresa la Fecha de Nacimiento de ${f.apellido} ${f.nombre}.`);
+            return;
+          }
+        }
+      }
+
+      const payload = {
+        tipo_tramite: "ACTUALIZACION_GRUPO_FAMILIAR",
+        legajo: state.legajo,
+        titular: state.titular,
+        cuil: state.cuil,
+        timestamp: new Date().toISOString(),
+        familiares_vigentes: state.familiares.filter(f => f.accion === 'VIGENTE' || f.accion === 'EDITADO'),
+        familiares_nuevos: state.familiares.filter(f => f.accion === 'NUEVO'),
+        familiares_bajas: state.familiares.filter(f => f.accion === 'BAJA'),
+        observaciones: document.getElementById("obsGeneral").value.trim()
+      };
+
+      if (tg && typeof tg.sendData === 'function') {
+        tg.sendData(JSON.stringify(payload));
+      } else {
+        alert("¡Datos validados listos para enviar a Telegram!\n\nPayload:\n" + JSON.stringify(payload, null, 2));
+      }
+    });
+
+    renderList();
+  </script>
+</body>
+</html>
