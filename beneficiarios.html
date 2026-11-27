@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Designación de Beneficiarios — Seguro de Vida</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-muted: #f8fafc;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --accent-text: #115e59;
+      --primary: #1e293b;
+      --primary-hover: #0f172a;
+      --ok: #15803d;
+      --ok-bg: #dcfce7;
+      --warn: #b45309;
+      --warn-bg: #fef3c7;
+      --warn-border: #fcd34d;
+      --err: #b91c1c;
+      --err-bg: #fee2e2;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.45;
+      padding-bottom: 84px;
+    }
+
+    .topbar {
+      background: #111827;
+      color: #f8fafc;
+      padding: 14px 18px;
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .topbar-inner {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .policy-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 18px auto 0;
+      padding: 0 14px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (min-width: 860px) {
+      .container { grid-template-columns: 1.6fr 1fr; }
+      .summary-col { position: sticky; top: 16px; }
+    }
+
+    .steps-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .step-badge {
+      width: 34px;
+      min-width: 34px;
+      height: 30px;
+      margin-top: 10px;
+      background: #5eead4;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px 0 0 6px;
+      clip-path: polygon(0 0, 78% 0, 100% 50%, 78% 100%, 0 100%);
+      padding-right: 6px;
+      opacity: 0.55;
+      transition: opacity 0.2s ease, background 0.2s ease;
+    }
+
+    .step-row.active .step-badge,
+    .step-row.done .step-badge {
+      opacity: 1;
+      background: #2dd4bf;
+    }
+
+    .step-card {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+    }
+
+    .step-header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      background: var(--surface);
+    }
+
+    .step-row:not(.active) .step-header { background: var(--surface-muted); }
+
+    .step-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .step-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .step-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .step-row.done .step-status { background: var(--ok-bg); color: var(--ok); }
+
+    .step-body {
+      display: none;
+      padding: 4px 16px 18px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .step-row.active .step-body { display: block; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 11px;
+      margin-top: 12px;
+    }
+
+    @media (min-width: 520px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-doc {
+        display: grid;
+        grid-template-columns: 95px 1fr;
+        gap: 8px;
+      }
+      .grid-4-addr {
+        display: grid;
+        grid-template-columns: 2.3fr 0.8fr 0.55fr 0.55fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 519px) {
+      .grid-doc {
+        display: grid;
+        grid-template-columns: 92px 1fr;
+        gap: 8px;
+      }
+      .grid-4-addr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .grid-4-addr .span-full { grid-column: 1 / -1; }
+    }
+
+    .field { display: flex; flex-direction: column; gap: 4px; }
+
+    .field-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field label { font-size: 12px; font-weight: 600; color: #334155; }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .char-count.near { color: var(--warn); font-weight: 600; }
+    .char-count.full { color: var(--err); font-weight: 700; }
+
+    .form-control {
+      width: 100%;
+      padding: 9px 11px;
+      font-size: 13.5px;
+      color: var(--text);
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .form-control[readonly],
+    .form-control:disabled {
+      background: #f1f5f9;
+      color: #475569;
+      cursor: not-allowed;
+    }
+
+    .upper-input { text-transform: uppercase; }
+
+    .hint-small { font-size: 11.5px; color: var(--muted); }
+
+    .alert {
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      margin-top: 12px;
+      border: 1px solid transparent;
+    }
+    .alert-info { background: #f0fdfa; border-color: #99f6e4; color: #134e4a; }
+    .alert-warn { background: var(--warn-bg); border-color: var(--warn-border); color: #78350f; }
+    .alert-err { background: var(--err-bg); border-color: #fca5a5; color: var(--err); }
+
+    .ben-card {
+      margin-top: 12px;
+      padding: 14px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .ben-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed var(--border-strong);
+    }
+
+    .ben-title { font-size: 13px; font-weight: 700; color: var(--text); }
+
+    .btn-remove {
+      background: transparent;
+      border: 1px solid #fca5a5;
+      color: var(--err);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .subbox {
+      margin-top: 11px;
+      padding: 10px 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+    }
+
+    .subbox-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .preview-pill {
+      margin-top: 8px;
+      font-size: 11.5px;
+      padding: 6px 9px;
+      border-radius: 7px;
+      background: #f8fafc;
+      border: 1px dashed var(--border-strong);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+    .preview-pill.over {
+      background: var(--err-bg);
+      border-color: #fca5a5;
+      color: var(--err);
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #334155;
+      cursor: pointer;
+    }
+    .check-row input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .pct-meter {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pct-pill {
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-variant-numeric: tabular-nums;
+    }
+    .pct-ok { background: var(--ok-bg); color: var(--ok); }
+    .pct-bad { background: var(--err-bg); color: var(--err); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: #ffffff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #ffffff; border-color: var(--border-strong); color: #334155; }
+    .btn-secondary:hover { background: #f8fafc; }
+
+    .btn-outline {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      background: #ffffff;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 9px;
+      color: var(--accent-text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-outline:hover { background: #f0fdfa; border-color: var(--accent); }
+
+    .btn-mini {
+      padding: 5px 10px;
+      font-size: 11.5px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: #f8fafc;
+      color: #0f172a;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .summary-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-block {
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12.5px;
+    }
+
+    .summary-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .summary-val { color: var(--text); font-weight: 500; word-break: break-word; }
+
+    .summary-ben-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px dashed #f1f5f9;
+    }
+    .summary-ben-item:last-child { border-bottom: 0; }
+
+    .fatal-box {
+      max-width: 560px;
+      margin: 40px auto;
+      background: var(--surface);
+      border: 1px solid #fca5a5;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">PORTAL RRHH · SEGURO DE VIDA</div>
+      <div class="policy-pill">Póliza IAM N° 127385</div>
+    </div>
+  </header>
+
+  <div id="fatalBox" class="fatal-box hidden">
+    <h2 style="font-size:17px; margin-bottom:8px;">Enlace inválido o expirado</h2>
+    <p id="fatalMsg" style="font-size:13px; color:#475569;">Solicita un nuevo enlace desde Telegram (/mis_datos).</p>
+  </div>
+
+  <main id="mainApp" class="container hidden">
+    <section class="steps-col">
+
+      <!-- PASO 1 -->
+      <div class="step-row active" id="stepRow1">
+        <div class="step-badge">1</div>
+        <div class="step-card">
+          <div class="step-header" onclick="goStep(1)">
+            <div>
+              <div class="step-title">1. Datos personales del titular</div>
+              <div class="step-sub">Verifica tus datos precargados desde RRHH</div>
+            </div>
+            <span class="step-status" id="statusStep1">En edición</span>
+          </div>
+          <div class="step-body">
+            <div class="grid-2">
+              <div class="field" style="grid-column: 1 / -1;">
+                <div class="field-head">
+                  <label for="empNombre">Apellido y Nombre</label>
+                  <span class="char-count" id="cntEmpNombre">0 / 42</span>
+                </div>
+                <input id="empNombre" class="form-control" maxlength="42" readonly />
+              </div>
+
+              <div class="field">
+                <label for="empTipoDoc">Tipo de Documento</label>
+                <input id="empTipoDoc" class="form-control" value="DU" readonly />
+                <span class="hint-small">Fijo "DU" según formato oficial IAM.</span>
+              </div>
+
+              <div class="field">
+                <div class="field-head">
+                  <label for="empNroDoc">N° de Documento</label>
+                  <span class="char-count" id="cntEmpDoc">0 / 8</span>
+                </div>
+                <input id="empNroDoc" class="form-control" maxlength="8" inputmode="numeric"
+                  placeholder="Sin puntos (7 u 8 dígitos)"
+                  oninput="this.value=this.value.replace(/\D/g,'').slice(0,8);" />
+              </div>
+            </div>
+            <div id="errStep1" class="alert alert-err hidden"></div>
+            <div class="btn-row" style="justify-content:flex-end;">
+              <button type="button" class="btn btn-primary" onclick="nextFromStep(1)">Continuar a Domicilio →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div class="step-row" id="stepRow2">
+        <div class="step-badge">2</div>
+        <div class="step-card">
+          <div class="step-header" onclick="goStep(2)">
+            <div>
+              <div class="step-title">2. Domicilio y localidad del titular</div>
+              <div class="step-sub">Verifica o ajusta tu domicilio actual</div>
+            </div>
+            <span class="step-status" id="statusStep2">Pendiente</span>
+          </div>
+          <div class="step-body">
+            <div class="alert alert-info">
+              Si tu domicilio es de barrio/manzana/casa (ej. <code>B° Circulo 3 Mz K C.15</code>), déjalo en <strong>Calle / Barrio / Mz</strong> con <strong>N°</strong> vacío. Respeta los topes para evitar cortes en la ficha PDF.
+            </div>
+
+            <div class="grid-4-addr">
+              <div class="field span-full">
+                <div class="field-head">
+                  <label for="empCalle">Calle / Barrio / Manzana *</label>
+                  <span class="char-count" id="cntEmpCalle">0 / 27</span>
+                </div>
+                <input id="empCalle" class="form-control upper-input" maxlength="27" placeholder="Ej: Av. Chile o B° Castañares Mz K" />
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="empNro">N°</label>
+                  <span class="char-count" id="cntEmpNro">0 / 6</span>
+                </div>
+                <input id="empNro" class="form-control upper-input" maxlength="6" placeholder="S/N" />
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="empPiso">Piso</label>
+                  <span class="char-count" id="cntEmpPiso">0 / 2</span>
+                </div>
+                <input id="empPiso" class="form-control upper-input" maxlength="2" placeholder="-" />
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="empDpto">Dpto</label>
+                  <span class="char-count" id="cntEmpDpto">0 / 2</span>
+                </div>
+                <input id="empDpto" class="form-control upper-input" maxlength="2" placeholder="-" />
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="field">
+                <div class="field-head">
+                  <label for="empLocalidad">Localidad *</label>
+                  <span class="char-count" id="cntEmpLoc">0 / 32</span>
+                </div>
+                <input id="empLocalidad" class="form-control" maxlength="32" placeholder="Ej: Salta o P.R.Saenz Peña" />
+              </div>
+              <div class="field">
+                <div class="field-head">
+                  <label for="empCp">Código Postal</label>
+                  <span class="char-count" id="cntEmpCp">0 / 9</span>
+                </div>
+                <input id="empCp" class="form-control" maxlength="9" placeholder="4400" />
+              </div>
+            </div>
+
+            <div id="errStep2" class="alert alert-err hidden"></div>
+            <div class="btn-row">
+              <button type="button" class="btn btn-secondary" onclick="goStep(1)">← Volver</button>
+              <button type="button" class="btn btn-primary" onclick="nextFromStep(2)">Continuar a Beneficiarios →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div class="step-row" id="stepRow3">
+        <div class="step-badge">3</div>
+        <div class="step-card">
+          <div class="step-header" onclick="goStep(3)">
+            <div>
+              <div class="step-title">3. Designación de beneficiarios</div>
+              <div class="step-sub">Recomendado: 1 único beneficiario mayor de edad (100%)</div>
+            </div>
+            <span class="step-status" id="statusStep3">Pendiente</span>
+          </div>
+          <div class="step-body">
+            <div class="alert alert-info">
+              <strong>Recomendación:</strong> Designar <strong>1 solo beneficiario (100%) mayor de edad</strong> y <strong>no superar 2 beneficiarios</strong>.
+            </div>
+
+            <div id="beneficiariosAlert" class="alert alert-warn hidden"></div>
+            <div id="beneficiariosList"></div>
+
+            <button type="button" class="btn-outline" id="btnAddBen">
+              ➕ Agregar otro beneficiario
+            </button>
+
+            <div class="pct-meter">
+              <div>
+                <div style="font-weight:600; font-size:13px;">Suma total de porcentajes</div>
+                <div class="hint-small">Modifica los porcentajes manualmente; el total debe dar 100%.</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button type="button" class="btn-mini hidden" id="btnRepartirIgual" onclick="repartirEquitativo()">Repartir igual</button>
+                <span class="pct-pill pct-ok" id="pctBadge">100%</span>
+              </div>
+            </div>
+
+            <div id="errStep3" class="alert alert-err hidden"></div>
+            <div class="btn-row">
+              <button type="button" class="btn btn-secondary" onclick="goStep(2)">← Volver</button>
+              <button type="button" class="btn btn-primary" onclick="nextFromStep(3)">Revisar y Confirmar →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 4 -->
+      <div class="step-row" id="stepRow4">
+        <div class="step-badge">4</div>
+        <div class="step-card">
+          <div class="step-header" onclick="goStep(4)">
+            <div>
+              <div class="step-title">4. Confirmación y emisión de ficha PDF</div>
+              <div class="step-sub">Se guardará y recibirás el PDF para imprimir y firmar</div>
+            </div>
+            <span class="step-status" id="statusStep4">Pendiente</span>
+          </div>
+          <div class="step-body">
+            <div class="field" style="margin-top:12px;">
+              <label for="obsGeneral">Observaciones adicionales (opcional)</label>
+              <textarea id="obsGeneral" class="form-control" rows="2" maxlength="160" placeholder="Aclaraciones para RRHH..."></textarea>
+            </div>
+
+            <div class="alert alert-info">
+              Al confirmar, tus datos quedarán registrados y Telegram te enviará la ficha PDF cifrada (se abre con tu DNI) para que la <strong>imprimas y entregues firmada en RRHH</strong>.
+            </div>
+
+            <div id="submitError" class="alert alert-err hidden"></div>
+
+            <div class="btn-row">
+              <button type="button" class="btn btn-secondary" onclick="goStep(3)">← Volver</button>
+              <button type="button" class="btn btn-primary" id="btnSubmit">✅ Confirmar y Generar Ficha PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <aside class="summary-col">
+      <div class="summary-card">
+        <div class="summary-title">
+          <span>Resumen de Ficha IAM</span>
+          <span style="font-size:11px; color:var(--muted); font-weight:500;">Vista previa PDF</span>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Trabajador Titular</div>
+          <div class="summary-val" id="sumTitular">—</div>
+          <div class="hint-small" id="sumDoc">DU — | Expedido por: (vacío)</div>
+        </div>
+
+        <div class="summary-block">
+          <div class="summary-label">Domicilio Normalizado</div>
+          <div class="summary-val" id="sumDomicilio">—</div>
+          <div class="hint-small" id="sumLocalidad">—</div>
+        </div>
+
+        <div class="summary-block" style="border-bottom:0; padding-bottom:2px;">
+          <div class="summary-label">Beneficiario(s)</div>
+          <div id="sumBeneficiarios"></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+    }
+
+    const LIMITS = {
+      emp_nombre: 42,
+      emp_calle: 27,
+      emp_nro: 6,
+      emp_piso: 2,
+      emp_dpto: 2,
+      emp_localidad: 32,
+      emp_cp: 9,
+      ben_nombre: 31,
+      ben_parentesco: 16,
+      ben_domicilio: 25,
+      ben_documento: 13
+    };
+
+    const PARENTESCOS_LIST = ["CÓNYUGE", "CONVIVIENTE", "HIJO/A", "PADRE", "MADRE", "HERMANO/A", "OTRO"];
+
+    let state = {
+      legajo: 0,
+      cuil: "",
+      fecha_nacimiento: "",
+      fecha_ingreso: "",
+      provincia: "Salta",
+      beneficiarios: []
+    };
+
+    function b64uToBytes(str) {
+      let b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4) b64 += "=";
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+
+    async function decryptHashPayload() {
+      const hash = (window.location.hash || "").replace(/^#/, "");
+      if (!hash.includes("d=")) {
+        if (window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost" || window.location.protocol === "file:") {
+          return {
+            demo: true,
+            titular: {
+              legajo: 163,
+              apellido_nombre: "GAONA, PEDRO SEBASTIAN",
+              cuil: "20-35123456-7",
+              tipo_documento: "DU",
+              nro_documento: "35123456",
+              calle: "CNEL VIDT (V. PRIMAVERA)",
+              nro: "2153",
+              piso: "",
+              dpto: "",
+              localidad: "Salta",
+              codigo_postal: "4400",
+              provincia: "Salta"
+            },
+            beneficiarios: []
+          };
+        }
+        throw new Error("Faltan parámetros cifrados de sesión.");
+      }
+
+      const params = new URLSearchParams(hash);
+      const dToken = params.get("d") || "";
+      const kToken = params.get("k") || "";
+      if (!dToken.includes(".") || !kToken) {
+        throw new Error("El enlace cifrado está incompleto.");
+      }
+
+      const [ivStr, ctStr] = dToken.split(".", 2);
+      const iv = b64uToBytes(ivStr);
+      const ct = b64uToBytes(ctStr);
+      const rawKey = b64uToBytes(kToken);
+
+      const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["decrypt"]);
+      const plainBuf = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, cryptoKey, ct);
+      const parsed = JSON.parse(new TextDecoder().decode(plainBuf));
+      if (parsed.exp && Math.floor(Date.now() / 1000) > parsed.exp) {
+        throw new Error("Este formulario expiró por seguridad (vigencia 2 hs). Vuelve a solicitarlo en Telegram.");
+      }
+      return parsed;
+    }
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    function cleanUpper(s) {
+      return String(s || "").replace(/\s+/g, " ").trim().toUpperCase();
+    }
+
+    function getTitularAddress() {
+      return {
+        calle: cleanUpper(document.getElementById("empCalle").value).slice(0, LIMITS.emp_calle),
+        nro: cleanUpper(document.getElementById("empNro").value).slice(0, LIMITS.emp_nro),
+        piso: cleanUpper(document.getElementById("empPiso").value).slice(0, LIMITS.emp_piso),
+        dpto: cleanUpper(document.getElementById("empDpto").value).slice(0, LIMITS.emp_dpto)
+      };
+    }
+
+    function compactAddress25(calle, nro, piso, dpto, sliceToLimit = true) {
+      const parts = [];
+      if (calle) parts.push(calle);
+      if (nro) parts.push(nro);
+      if (piso) parts.push(`P${piso}`);
+      if (dpto) parts.push(piso ? dpto : `D${dpto}`);
+      let full = cleanUpper(parts.join(" "));
+      if (full.length > LIMITS.ben_domicilio) {
+        // Proceso intermedio: abreviar y ahorrar espacios tras signos de puntuación o paréntesis
+        full = full
+          .replace(/\bBARRIO\b\.?/g, "B°")
+          .replace(/\bBO\.?\b/g, "B°")
+          .replace(/\bVILLA\b\.?/g, "V°")
+          .replace(/\bVA\.?\b/g, "V°")
+          .replace(/\bMANZANA\b\.?/g, "MZ")
+          .replace(/\bMZA\.?\b/g, "MZ")
+          .replace(/\bLOTE\b\.?/g, "L")
+          .replace(/\bCASA\b\.?/g, "C.")
+          .replace(/\bAVENIDA\b\.?/g, "AV.")
+          .replace(/\bPASAJE\b\.?/g, "PJE.")
+          .replace(/\bGENERAL\b\.?/g, "GRAL.")
+          .replace(/\bCORONEL\b\.?/g, "CNEL.")
+          .replace(/([.,;:°º\-/(])\s+/g, "$1")
+          .replace(/\)\s+/g, ")")
+          .replace(/\s+\(/g, "(")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+      return sliceToLimit ? full.slice(0, LIMITS.ben_domicilio) : full;
+    }
+
+    function composeBenNombre(b) {
+      const ape = cleanUpper(b.apellido);
+      const nom = cleanUpper(b.nombre);
+      if (!ape && !nom) return "";
+      if (!ape) return nom;
+      if (!nom) return ape;
+      const conComa = `${ape}, ${nom}`;
+      return conComa.length <= LIMITS.ben_nombre ? conComa : `${ape} ${nom}`;
+    }
+
+    function composeBenDocumento(b) {
+      const tipo = cleanUpper(b.tipo_doc || "DU");
+      const nro = String(b.nro_doc || "").replace(/\D/g, "");
+      if (!nro) return "";
+      return `${tipo} ${nro}`.slice(0, LIMITS.ben_documento);
+    }
+
+    function composeBenParentesco(b) {
+      if (b.parentesco_sel === "OTRO") {
+        return cleanUpper(b.parentesco_otro || "");
+      }
+      return cleanUpper(b.parentesco_sel || "CÓNYUGE");
+    }
+
+    function getBenDomicilioText(b) {
+      return compactAddress25(b.calle, b.nro, b.piso, b.dpto);
+    }
+
+    function parseSavedDocumento(docStr) {
+      const s = cleanUpper(docStr);
+      const m = s.match(/^(DU|DNI|LC|LE|PAS)?\s*([\d.\-]+)$/);
+      if (m) {
+        return { tipo_doc: m[1] || "DU", nro_doc: m[2].replace(/\D/g, "") };
+      }
+      return { tipo_doc: "DU", nro_doc: s.replace(/\D/g, "") };
+    }
+
+    function parseSavedNombre(b) {
+      if (b.apellido || b.nombre) {
+        return { apellido: cleanUpper(b.apellido), nombre: cleanUpper(b.nombre) };
+      }
+      const s = cleanUpper(b.nombre_completo);
+      if (!s) return { apellido: "", nombre: "" };
+      if (s.includes(",")) {
+        const [a, n] = s.split(",", 2);
+        return { apellido: a.trim(), nombre: n.trim() };
+      }
+      const sp = s.indexOf(" ");
+      if (sp > 0) return { apellido: s.slice(0, sp), nombre: s.slice(sp + 1) };
+      return { apellido: s, nombre: "" };
+    }
+
+    function updateCounter(inputEl, counterEl, maxLen) {
+      if (!inputEl || !counterEl) return;
+      const len = (inputEl.value || "").length;
+      counterEl.textContent = `${len} / ${maxLen}`;
+      counterEl.classList.remove("near", "full");
+      if (len >= maxLen) counterEl.classList.add("full");
+      else if (len >= Math.floor(maxLen * 0.85)) counterEl.classList.add("near");
+    }
+
+    function showInlineError(boxId, msg) {
+      const box = document.getElementById(boxId);
+      if (!box) return;
+      if (!msg) {
+        box.textContent = "";
+        box.classList.add("hidden");
+      } else {
+        box.textContent = msg;
+        box.classList.remove("hidden");
+      }
+    }
+
+    function goStep(stepNum) {
+      [1, 2, 3, 4].forEach(n => {
+        const row = document.getElementById(`stepRow${n}`);
+        if (n === stepNum) {
+          row.classList.add("active");
+          document.getElementById(`statusStep${n}`).textContent = "En edición";
+        } else {
+          row.classList.remove("active");
+          if (n < stepNum) {
+            row.classList.add("done");
+            document.getElementById(`statusStep${n}`).textContent = "Completado";
+          } else {
+            document.getElementById(`statusStep${n}`).textContent = "Pendiente";
+          }
+        }
+      });
+      if (stepNum === 3) {
+        syncTitularAddressToBeneficiaries();
+      }
+      refreshSummary();
+    }
+
+    function nextFromStep(stepNum) {
+      if (stepNum === 1) {
+        showInlineError("errStep1", "");
+        const docStr = document.getElementById("empNroDoc").value.replace(/\D/g, "");
+        const docNum = parseInt(docStr, 10);
+        if (!docStr || isNaN(docNum) || docNum < 1000000 || docNum > 99999999) {
+          showInlineError("errStep1", "Ingresa un N° de Documento válido entre 1.000.000 y 99.999.999 (sin puntos).");
+          return;
+        }
+        goStep(2);
+      } else if (stepNum === 2) {
+        showInlineError("errStep2", "");
+        const calle = document.getElementById("empCalle").value.trim();
+        const loc = document.getElementById("empLocalidad").value.trim();
+        if (!calle) {
+          showInlineError("errStep2", "Completa Calle / Barrio / Manzana del domicilio.");
+          return;
+        }
+        if (!loc) {
+          showInlineError("errStep2", "Completa tu Localidad.");
+          return;
+        }
+        goStep(3);
+      } else if (stepNum === 3) {
+        const err = validateBeneficiarios();
+        showInlineError("errStep3", err || "");
+        if (err) return;
+        goStep(4);
+      }
+    }
+
+    function crearBeneficiarioVacio(pctDefault = 100) {
+      const titAddr = getTitularAddress();
+      return {
+        apellido: "",
+        nombre: "",
+        parentesco_sel: "CÓNYUGE",
+        parentesco_otro: "",
+        tipo_doc: "DU",
+        nro_doc: "",
+        dom_editado: false,
+        calle: titAddr.calle,
+        nro: titAddr.nro,
+        piso: titAddr.piso,
+        dpto: titAddr.dpto,
+        porcentaje: pctDefault,
+        mayor_edad: true
+      };
+    }
+
+    function syncTitularAddressToBeneficiaries() {
+      const titAddr = getTitularAddress();
+      let changed = false;
+      state.beneficiarios.forEach((b, idx) => {
+        if (!b.dom_editado) {
+          b.calle = titAddr.calle;
+          b.nro = titAddr.nro;
+          b.piso = titAddr.piso;
+          b.dpto = titAddr.dpto;
+          changed = true;
+          refreshBenCardLive(idx);
+        }
+      });
+      if (changed && document.getElementById("stepRow3").classList.contains("active")) {
+        renderBeneficiarios();
+      }
+    }
+
+    function refreshBenCardLive(idx) {
+      const b = state.beneficiarios[idx];
+      if (!b) return;
+      const nomComp = composeBenNombre(b);
+      const cntNom = document.getElementById(`cntBenCombined_${idx}`);
+      if (cntNom) {
+        cntNom.textContent = `PDF: "${nomComp || "..."}" (${nomComp.length} / ${LIMITS.ben_nombre} car.)`;
+        cntNom.className = "char-count" + (nomComp.length > LIMITS.ben_nombre ? " full" : (nomComp.length >= 26 ? " near" : ""));
+      }
+
+      const domText = getBenDomicilioText(b);
+      const prevEl = document.getElementById(`benDomPrev_${idx}`);
+      if (prevEl) {
+        const nearOrFull = domText.length >= LIMITS.ben_domicilio ? "full" : (domText.length >= 22 ? "near" : "");
+        prevEl.className = "preview-pill";
+        prevEl.innerHTML = `
+          <span>Domicilio a imprimir: <strong>${escapeHtml(domText || "—")}</strong></span>
+          <span class="char-count ${nearOrFull}">${domText.length} / ${LIMITS.ben_domicilio}</span>
+        `;
+      }
+    }
+
+    function updateBenAddressInput(idx, field, inputEl) {
+      const b = state.beneficiarios[idx];
+      if (!b || !inputEl) return;
+      b.dom_editado = true;
+      let val = inputEl.value || "";
+      b[field] = val;
+      while (val.length > 0 && compactAddress25(b.calle, b.nro, b.piso, b.dpto, false).length > LIMITS.ben_domicilio) {
+        val = val.slice(0, -1);
+        b[field] = val;
+      }
+      if (inputEl.value !== val) {
+        inputEl.value = val;
+      }
+      refreshBenCardLive(idx);
+      refreshSummary();
+    }
+
+    function updateBenField(idx, field, val) {
+      if (!state.beneficiarios[idx]) return;
+      state.beneficiarios[idx][field] = val;
+      refreshBenCardLive(idx);
+      updatePctMeter();
+      refreshSummary();
+    }
+
+    function toggleParentesco(idx, val) {
+      const b = state.beneficiarios[idx];
+      if (!b) return;
+      b.parentesco_sel = val;
+      const customWrap = document.getElementById(`parOtroWrap_${idx}`);
+      if (customWrap) customWrap.classList.toggle("hidden", val !== "OTRO");
+      refreshSummary();
+    }
+
+    function removeBen(idx) {
+      if (state.beneficiarios.length <= 1) return;
+      state.beneficiarios.splice(idx, 1);
+      renderBeneficiarios();
+      refreshSummary();
+    }
+
+    function repartirEquitativo() {
+      const n = state.beneficiarios.length;
+      if (!n) return;
+      const base = Math.floor((100 / n) * 100) / 100;
+      let acc = 0;
+      state.beneficiarios.forEach((b, i) => {
+        if (i === n - 1) {
+          b.porcentaje = Math.round((100 - acc) * 100) / 100;
+        } else {
+          b.porcentaje = base;
+          acc += base;
+        }
+      });
+      renderBeneficiarios();
+      refreshSummary();
+    }
+
+    function getTotalPorcentaje() {
+      return state.beneficiarios.reduce((acc, b) => {
+        const num = parseFloat(String(b.porcentaje || "0").replace(",", "."));
+        return acc + (isNaN(num) ? 0 : num);
+      }, 0);
+    }
+
+    function updatePctMeter() {
+      const total = Math.round(getTotalPorcentaje() * 100) / 100;
+      const badge = document.getElementById("pctBadge");
+      const btnRep = document.getElementById("btnRepartirIgual");
+      badge.textContent = `${total}%`;
+      badge.className = "pct-pill " + (Math.abs(total - 100) <= 0.01 ? "pct-ok" : "pct-bad");
+      btnRep.classList.toggle("hidden", state.beneficiarios.length < 2);
+    }
+
+    function updateBenWarningBanner() {
+      const box = document.getElementById("beneficiariosAlert");
+      const count = state.beneficiarios.length;
+
+      let msgs = [];
+      if (count === 2) {
+        msgs.push("Aviso: Has agregado 2 beneficiarios (máximo recomendado). Verifica que los porcentajes manuales sumen 100%.");
+      } else if (count >= 3) {
+        msgs.push(`⚠️ Advertencia: Has cargado ${count} beneficiarios. No se recomienda designar más de 2 beneficiarios (tope físico del formulario: 5). Asegúrate de que sumen 100%.`);
+      }
+
+      if (msgs.length) {
+        box.innerHTML = msgs.map(m => `<div>${m}</div>`).join("");
+        box.classList.remove("hidden");
+      } else {
+        box.classList.add("hidden");
+      }
+    }
+
+    function renderBeneficiarios() {
+      const listEl = document.getElementById("beneficiariosList");
+      listEl.innerHTML = "";
+
+      state.beneficiarios.forEach((b, idx) => {
+        const card = document.createElement("div");
+        card.className = "ben-card";
+        const parOptions = PARENTESCOS_LIST.map(op =>
+          `<option value="${op}" ${b.parentesco_sel === op ? "selected" : ""}>${op}</option>`
+        ).join("");
+        const docOptions = ["DU", "DNI", "LC", "LE", "PAS"].map(d =>
+          `<option value="${d}" ${b.tipo_doc === d ? "selected" : ""}>${d}</option>`
+        ).join("");
+        const nomComp = composeBenNombre(b);
+
+        card.innerHTML = `
+          <div class="ben-card-head">
+            <span class="ben-title">Beneficiario #${idx + 1}</span>
+            ${state.beneficiarios.length > 1
+              ? `<button type="button" class="btn-remove" onclick="removeBen(${idx})">Quitar</button>`
+              : `<span style="font-size:11px; color:var(--accent-text); font-weight:600;">Titular principal</span>`}
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>Apellido *</label>
+              <input class="form-control upper-input" maxlength="25" value="${escapeHtml(b.apellido)}"
+                placeholder="Ej: LOPEZ"
+                oninput="updateBenField(${idx}, 'apellido', this.value);" />
+            </div>
+            <div class="field">
+              <label>Nombre(s) *</label>
+              <input class="form-control upper-input" maxlength="25" value="${escapeHtml(b.nombre)}"
+                placeholder="Ej: MARIA SOLEDAD"
+                oninput="updateBenField(${idx}, 'nombre', this.value);" />
+            </div>
+            <div style="grid-column:1 / -1; margin-top:-4px;">
+              <span class="char-count" id="cntBenCombined_${idx}">PDF: "${escapeHtml(nomComp || "...")}" (${nomComp.length} / ${LIMITS.ben_nombre} car.)</span>
+            </div>
+
+            <div class="field">
+              <label>Parentesco *</label>
+              <select class="form-control" onchange="toggleParentesco(${idx}, this.value)">${parOptions}</select>
+              <div id="parOtroWrap_${idx}" class="${b.parentesco_sel === "OTRO" ? "" : "hidden"}" style="margin-top:4px;">
+                <input class="form-control upper-input" maxlength="${LIMITS.ben_parentesco}" value="${escapeHtml(b.parentesco_otro)}"
+                  placeholder="Especificar parentesco (máx. 16 car.)"
+                  oninput="updateBenField(${idx}, 'parentesco_otro', this.value);" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Documento *</label>
+              <div class="grid-doc">
+                <select class="form-control" onchange="updateBenField(${idx}, 'tipo_doc', this.value)">${docOptions}</select>
+                <input class="form-control" inputmode="numeric" maxlength="8" value="${escapeHtml(b.nro_doc)}"
+                  placeholder="Sin puntos (1M a 99M)"
+                  oninput="this.value=this.value.replace(/\\D/g,'').slice(0,8); updateBenField(${idx}, 'nro_doc', this.value);" />
+              </div>
+            </div>
+          </div>
+
+          <div class="subbox">
+            <div class="subbox-head">
+              <span style="font-size:12px; font-weight:600; color:#334155;">Domicilio del beneficiario *</span>
+            </div>
+
+            <div class="grid-4-addr">
+              <div class="field span-full">
+                <label>Calle / Barrio / Mz</label>
+                <input class="form-control upper-input" maxlength="25" value="${escapeHtml(b.calle)}"
+                  placeholder="Ej: B° Castañares Mz K"
+                  oninput="updateBenAddressInput(${idx}, 'calle', this);" />
+              </div>
+              <div class="field">
+                <label>N°</label>
+                <input class="form-control upper-input" maxlength="6" value="${escapeHtml(b.nro)}"
+                  placeholder="S/N"
+                  oninput="updateBenAddressInput(${idx}, 'nro', this);" />
+              </div>
+              <div class="field">
+                <label>Piso</label>
+                <input class="form-control upper-input" maxlength="2" value="${escapeHtml(b.piso)}"
+                  placeholder="-"
+                  oninput="updateBenAddressInput(${idx}, 'piso', this);" />
+              </div>
+              <div class="field">
+                <label>Dpto</label>
+                <input class="form-control upper-input" maxlength="2" value="${escapeHtml(b.dpto)}"
+                  placeholder="-"
+                  oninput="updateBenAddressInput(${idx}, 'dpto', this);" />
+              </div>
+            </div>
+
+            <div id="benDomPrev_${idx}" class="preview-pill"></div>
+          </div>
+
+          <div class="field" style="margin-top:11px; max-width:260px;">
+            <div class="field-head">
+              <label>Porcentaje (%) *</label>
+              <span class="char-count">Editable (total 100%)</span>
+            </div>
+            <input type="number" min="1" max="100" step="0.5" class="form-control" value="${escapeHtml(b.porcentaje)}"
+              oninput="updateBenField(${idx}, 'porcentaje', this.value);" />
+          </div>
+        `;
+        listEl.appendChild(card);
+        refreshBenCardLive(idx);
+      });
+
+      document.getElementById("btnAddBen").classList.toggle("hidden", state.beneficiarios.length >= 5);
+      updatePctMeter();
+      updateBenWarningBanner();
+    }
+
+    function validateBeneficiarios() {
+      if (!state.beneficiarios.length) return "Debes cargar al menos 1 beneficiario.";
+      for (let i = 0; i < state.beneficiarios.length; i++) {
+        const b = state.beneficiarios[i];
+        const idx = i + 1;
+        if (!cleanUpper(b.apellido)) return `Completa el Apellido del beneficiario #${idx}.`;
+        if (!cleanUpper(b.nombre)) return `Completa el Nombre del beneficiario #${idx}.`;
+        const nomFull = composeBenNombre(b);
+        if (nomFull.length > LIMITS.ben_nombre) {
+          return `Apellido y Nombre del beneficiario #${idx} supera los ${LIMITS.ben_nombre} caracteres permitidos en el PDF (${nomFull.length}). Abrévialo levemente.`;
+        }
+        const par = composeBenParentesco(b);
+        if (!par) return `Indica el Parentesco del beneficiario #${idx}.`;
+        if (par.length > LIMITS.ben_parentesco) return `El Parentesco del beneficiario #${idx} supera ${LIMITS.ben_parentesco} caracteres.`;
+        const docNroStr = String(b.nro_doc || "").replace(/\D/g, "");
+        const docNum = parseInt(docNroStr, 10);
+        if (!docNroStr || isNaN(docNum) || docNum < 1000000 || docNum > 99999999) {
+          return `El N° de Documento del beneficiario #${idx} debe ser un valor entre 1.000.000 y 99.999.999 (sin puntos).`;
+        }
+        const doc = composeBenDocumento(b);
+        if (doc.length > LIMITS.ben_documento) return `El Documento del beneficiario #${idx} supera ${LIMITS.ben_documento} caracteres.`;
+        const dom = getBenDomicilioText(b);
+        if (!dom) return `Completa el Domicilio del beneficiario #${idx}.`;
+        const pct = parseFloat(String(b.porcentaje || "0").replace(",", "."));
+        if (isNaN(pct) || pct <= 0 || pct > 100) return `El porcentaje del beneficiario #${idx} debe estar entre 1% y 100%.`;
+      }
+      const total = Math.round(getTotalPorcentaje() * 100) / 100;
+      if (Math.abs(total - 100) > 0.01) {
+        return `La suma total de porcentajes debe ser exactamente 100% (actual: ${total}%).`;
+      }
+      return null;
+    }
+
+    function refreshSummary() {
+      const nom = cleanUpper(document.getElementById("empNombre").value);
+      const doc = document.getElementById("empNroDoc").value.replace(/\D/g, "");
+      const addr = getTitularAddress();
+      const loc = document.getElementById("empLocalidad").value.trim();
+      const cp = document.getElementById("empCp").value.trim();
+
+      document.getElementById("sumTitular").textContent = `${nom || "—"} (Legajo ${state.legajo})`;
+      document.getElementById("sumDoc").textContent = `DU ${doc || "—"} | Expedido por: (vacío)`;
+
+      const addrParts = [addr.calle];
+      if (addr.nro) addrParts.push(`N° ${addr.nro}`);
+      if (addr.piso) addrParts.push(`Piso ${addr.piso}`);
+      if (addr.dpto) addrParts.push(`Dpto ${addr.dpto}`);
+      document.getElementById("sumDomicilio").textContent = addrParts.filter(Boolean).join(" ") || "—";
+      document.getElementById("sumLocalidad").textContent = `${loc || "—"}${cp ? " (CP " + cp + ")" : ""}`;
+
+      const sumB = document.getElementById("sumBeneficiarios");
+      sumB.innerHTML = state.beneficiarios.map((b, i) => {
+        const nomBen = composeBenNombre(b) || "SIN NOMBRE";
+        const parBen = composeBenParentesco(b);
+        const docBen = composeBenDocumento(b) || "SIN DOC";
+        const domBen = getBenDomicilioText(b) || "SIN DOMICILIO";
+        return `
+          <div class="summary-ben-item">
+            <div>
+              <div style="font-weight:600;">${i + 1}. ${escapeHtml(nomBen)}</div>
+              <div class="hint-small">${escapeHtml(parBen)} · ${escapeHtml(docBen)}</div>
+              <div class="hint-small">${escapeHtml(domBen)}</div>
+            </div>
+            <div style="font-weight:700; color:var(--accent-text);">${parseFloat(b.porcentaje || 0)}%</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    document.getElementById("btnAddBen").addEventListener("click", () => {
+      const nextCount = state.beneficiarios.length + 1;
+      if (nextCount > 5) return;
+      if (nextCount === 2) {
+        if (!confirm("Recomendación: Se sugiere designar 1 único beneficiario (100%). ¿Deseas agregar un 2.º beneficiario y ajustar los porcentajes manualmente?")) {
+          return;
+        }
+      } else if (nextCount >= 3) {
+        if (!confirm(`⚠️ Advertencia: No se recomienda designar más de 2 beneficiarios.\n\n¿Confirmas que deseas agregar el beneficiario #${nextCount} igualmente?`)) {
+          return;
+        }
+      }
+      state.beneficiarios.push(crearBeneficiarioVacio(0));
+      renderBeneficiarios();
+      refreshSummary();
+    });
+
+    document.getElementById("btnSubmit").addEventListener("click", () => {
+      showInlineError("submitError", "");
+
+      const docStr = document.getElementById("empNroDoc").value.replace(/\D/g, "");
+      const docNum = parseInt(docStr, 10);
+      const addr = getTitularAddress();
+      const loc = document.getElementById("empLocalidad").value.trim();
+
+      if (!docStr || isNaN(docNum) || docNum < 1000000 || docNum > 99999999 || !addr.calle || !loc) {
+        showInlineError("submitError", "Verifica el N° de Documento (1.000.000 a 99.999.999), Calle/Barrio y Localidad del titular en los pasos 1 y 2.");
+        return;
+      }
+
+      const benErr = validateBeneficiarios();
+      if (benErr) {
+        showInlineError("submitError", benErr);
+        return;
+      }
+
+      const payload = {
+        tipo_tramite: "ACTUALIZACION_BENEFICIARIOS_SEGURO",
+        legajo: state.legajo,
+        titular: {
+          legajo: state.legajo,
+          apellido_nombre: cleanUpper(document.getElementById("empNombre").value),
+          cuil: state.cuil,
+          tipo_documento: "DU",
+          nro_documento: docStr,
+          expedido_por: "",
+          fecha_nacimiento: state.fecha_nacimiento,
+          fecha_ingreso: state.fecha_ingreso,
+          calle: addr.calle,
+          nro: addr.nro,
+          piso: addr.piso,
+          dpto: addr.dpto,
+          localidad: loc,
+          codigo_postal: document.getElementById("empCp").value.trim(),
+          provincia: state.provincia
+        },
+        beneficiarios: state.beneficiarios.map(b => ({
+          apellido: cleanUpper(b.apellido),
+          nombre: cleanUpper(b.nombre),
+          nombre_completo: composeBenNombre(b),
+          parentesco: composeBenParentesco(b),
+          documento: composeBenDocumento(b),
+          domicilio: getBenDomicilioText(b),
+          porcentaje: parseFloat(String(b.porcentaje || "0").replace(",", ".")),
+          mayor_edad: !!b.mayor_edad
+        })),
+        observaciones: document.getElementById("obsGeneral").value.trim()
+      };
+
+      if (tg && typeof tg.sendData === "function") {
+        tg.sendData(JSON.stringify(payload));
+      } else {
+        alert("Payload listo para enviar a Telegram:\n\n" + JSON.stringify(payload, null, 2));
+      }
+    });
+
+    function bindInputCounters() {
+      const map = [
+        ["empNombre", "cntEmpNombre", LIMITS.emp_nombre],
+        ["empNroDoc", "cntEmpDoc", 8],
+        ["empCalle", "cntEmpCalle", LIMITS.emp_calle],
+        ["empNro", "cntEmpNro", LIMITS.emp_nro],
+        ["empPiso", "cntEmpPiso", LIMITS.emp_piso],
+        ["empDpto", "cntEmpDpto", LIMITS.emp_dpto],
+        ["empLocalidad", "cntEmpLoc", LIMITS.emp_localidad],
+        ["empCp", "cntEmpCp", LIMITS.emp_cp]
+      ];
+      map.forEach(([inId, cntId, maxL]) => {
+        const el = document.getElementById(inId);
+        const cnt = document.getElementById(cntId);
+        el.addEventListener("input", () => {
+          updateCounter(el, cnt, maxL);
+          if (["empCalle", "empNro", "empPiso", "empDpto"].includes(inId)) {
+            syncTitularAddressToBeneficiaries();
+          }
+          refreshSummary();
+        });
+        updateCounter(el, cnt, maxL);
+      });
+    }
+
+    (async () => {
+      try {
+        const data = await decryptHashPayload();
+        const tit = data.titular || {};
+        state.legajo = tit.legajo || 0;
+        state.cuil = tit.cuil || "";
+        state.fecha_nacimiento = tit.fecha_nacimiento || "";
+        state.fecha_ingreso = tit.fecha_ingreso || "";
+        state.provincia = tit.provincia || "Salta";
+
+        document.getElementById("empNombre").value = tit.apellido_nombre || "";
+        document.getElementById("empTipoDoc").value = "DU";
+        document.getElementById("empNroDoc").value = tit.nro_documento || "";
+        document.getElementById("empCalle").value = tit.calle || "";
+        document.getElementById("empNro").value = tit.nro || "";
+        document.getElementById("empPiso").value = tit.piso || "";
+        document.getElementById("empDpto").value = tit.dpto || "";
+        document.getElementById("empLocalidad").value = tit.localidad || "";
+        document.getElementById("empCp").value = tit.codigo_postal || "";
+
+        if (Array.isArray(data.beneficiarios) && data.beneficiarios.length > 0) {
+          const titDomCompact = compactAddress25(tit.calle || "", tit.nro || "", tit.piso || "", tit.dpto || "");
+          state.beneficiarios = data.beneficiarios.slice(0, 5).map(b => {
+            const { apellido, nombre } = parseSavedNombre(b);
+            const { tipo_doc, nro_doc } = parseSavedDocumento(b.documento || "");
+            const parUp = cleanUpper(b.parentesco || "CÓNYUGE");
+            const isStd = PARENTESCOS_LIST.includes(parUp) && parUp !== "OTRO";
+            const savedDom = cleanUpper(b.domicilio || "");
+            const esMismo = !savedDom || savedDom === titDomCompact;
+            return {
+              apellido,
+              nombre,
+              parentesco_sel: isStd ? parUp : "OTRO",
+              parentesco_otro: isStd ? "" : parUp,
+              tipo_doc,
+              nro_doc,
+              dom_editado: !esMismo,
+              calle: esMismo ? cleanUpper(tit.calle || "") : savedDom.slice(0, LIMITS.ben_domicilio),
+              nro: esMismo ? cleanUpper(tit.nro || "") : "",
+              piso: esMismo ? cleanUpper(tit.piso || "") : "",
+              dpto: esMismo ? cleanUpper(tit.dpto || "") : "",
+              porcentaje: b.porcentaje || 0,
+              mayor_edad: true
+            };
+          });
+        } else {
+          state.beneficiarios = [crearBeneficiarioVacio(100)];
+        }
+
+        document.getElementById("mainApp").classList.remove("hidden");
+        bindInputCounters();
+        renderBeneficiarios();
+        refreshSummary();
+      } catch (err) {
+        document.getElementById("fatalMsg").textContent = err.message || "Error descifrando el enlace.";
+        document.getElementById("fatalBox").classList.remove("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>
